@@ -75,6 +75,11 @@ Every debt entry should include:
 - [TD045 Content Moderation Lacks a Reviewed Implementation](td-045-reviewed-content-moderation.md)
 - [TD046 ONNX Binding Changes Lack Mandatory Runtime Coverage](td-046-onnx-binding-ci-coverage-gap.md)
 
+### PL0041 Managed Recipe Dashboard
+
+- [TD047 Managed Recipe Requests Reparse the Full Source Snapshot](td-047-managed-recipe-snapshot-cache.md)
+- [TD048 Recipe Validation Does Not Bind Runtime Configuration Provenance](td-048-recipe-validation-runtime-provenance.md)
+
 ## Retired Debt Policy
 
 Retired TD files are removed from this directory. Keep the ID in commit history

@@ -14,7 +14,9 @@ import {
 import {
   buildChatMessages,
   buildChatRequestBody,
+  buildExactChatRequestBody,
   collectResponseHeaders,
+  type OutboundChatMessage,
 } from './chatRequestSupport'
 import { toPlaygroundAttachmentSummaries } from './playgroundFileAttachments'
 import { createFrameSyncController } from './chatStreamingFrameSync'
@@ -80,7 +82,10 @@ export const runPlaygroundTask = async ({
 }: RunPlaygroundTaskOptions): Promise<void> => {
   const trimmedInput = task.prompt.trim()
   const taskAttachments = task.attachments ?? []
-  if (!trimmedInput && taskAttachments.length === 0) return
+  const exactMessages = Array.isArray(task.exactRequest?.messages)
+    ? (task.exactRequest.messages as OutboundChatMessage[])
+    : []
+  if (!trimmedInput && taskAttachments.length === 0 && exactMessages.length === 0) return
 
   setConversationError(task.conversationId, null)
 
@@ -107,7 +112,7 @@ export const runPlaygroundTask = async ({
 
   updateConversationMessages(task.conversationId, (prev) => [
     ...prev,
-    userMessage,
+    ...(task.appendPromptMessage === false ? [] : [userMessage]),
     assistantMessage,
   ])
   registerAbortController(task.conversationId, abortController)
@@ -117,14 +122,21 @@ export const runPlaygroundTask = async ({
   let cancelStreamingChoiceSync = () => {}
 
   try {
-    const activeTools = buildTaskTools(task)
-    const chatMessages = buildChatMessages(
-      getConversationMessagesSnapshot(task.conversationId),
-      trimmedInput,
-      task.requestOptions.enableClawMode && !clawManagementDisabled,
-      taskAttachments,
-    )
-    const requestBody = buildChatRequestBody(task.requestOptions.model, chatMessages, activeTools)
+    const exactTools = Array.isArray(task.exactRequest?.tools)
+      ? (task.exactRequest.tools as ToolDefinition[])
+      : null
+    const activeTools = task.exactRequest ? (exactTools ?? []) : buildTaskTools(task)
+    const chatMessages = task.exactRequest
+      ? exactMessages
+      : buildChatMessages(
+          getConversationMessagesSnapshot(task.conversationId),
+          trimmedInput,
+          task.requestOptions.enableClawMode && !clawManagementDisabled,
+          taskAttachments,
+        )
+    const requestBody = task.exactRequest
+      ? buildExactChatRequestBody(task.exactRequest, task.requestOptions.model)
+      : buildChatRequestBody(task.requestOptions.model, chatMessages, activeTools)
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -319,7 +331,7 @@ export const runPlaygroundTask = async ({
       }
     }
 
-    if (hasToolCalls) {
+    if (hasToolCalls && task.requestOptions.executeToolCalls !== false) {
       await runToolLoop({
         activeTools,
         assistantMessageId,
@@ -336,6 +348,13 @@ export const runPlaygroundTask = async ({
         toolCallsMap,
         updateConversationMessages,
       })
+    } else if (hasToolCalls) {
+      toolCallsMap.forEach((toolCall) => {
+        if (toolCall.status === 'pending' || toolCall.status === 'running') {
+          toolCall.status = 'skipped'
+        }
+      })
+      syncAssistantToolCalls()
     }
 
     const finalChoices: Choice[] | undefined = isRatingsMode

@@ -86,3 +86,4 @@ Tasks use stable IDs and checkbox status:
 - [pl-0038-entrypoints-recipes.md](pl-0038-entrypoints-recipes.md)
 - [pl-0039-domain-ci-architecture.md](pl-0039-domain-ci-architecture.md)
 - [pl-0040-recipe-conformance-ci.md](pl-0040-recipe-conformance-ci.md)
+- [pl-0041-managed-recipe-dashboard.md](pl-0041-managed-recipe-dashboard.md)

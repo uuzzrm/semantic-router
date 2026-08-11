@@ -159,7 +159,11 @@
   background: transparent;
   color: #e5e7eb;
   cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
   box-shadow: none;
 }
 
@@ -706,7 +710,6 @@ body.playground-fullscreen .container {
 }
 
 @keyframes blink {
-
   0%,
   50% {
     opacity: 1;
@@ -900,7 +903,6 @@ body.playground-fullscreen .container {
 }
 
 @keyframes blink {
-
   0%,
   50% {
     opacity: 1;
@@ -920,7 +922,12 @@ body.playground-fullscreen .container {
   gap: 0.5rem;
   width: 100%;
   padding: 1.35rem 1rem 1rem;
-  background: linear-gradient(180deg, rgba(7, 8, 10, 0) 0%, rgba(7, 8, 10, 0.72) 38%, rgba(7, 8, 10, 0.94) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(7, 8, 10, 0) 0%,
+    rgba(7, 8, 10, 0.72) 38%,
+    rgba(7, 8, 10, 0.94) 100%
+  );
   border-top: none;
   flex-shrink: 0;
   margin-top: auto;
@@ -1055,7 +1062,9 @@ body.playground-fullscreen .container {
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: background var(--transition-base), color var(--transition-base);
+  transition:
+    background var(--transition-base),
+    color var(--transition-base);
 }
 
 .attachButton:hover:not(:disabled) {
@@ -1142,7 +1151,10 @@ body.playground-fullscreen .container {
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .teamToggleLabel {
@@ -1218,7 +1230,9 @@ body.playground-fullscreen .container {
   border-radius: 6px;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.15s ease, visibility 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
   pointer-events: none;
   margin-bottom: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -1265,7 +1279,10 @@ body.playground-fullscreen .container {
   color: var(--color-text-secondary);
   border-radius: 999px;
   cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
   flex-shrink: 0;
   box-shadow: none;
 }
@@ -1350,7 +1367,6 @@ body.playground-fullscreen .container {
 }
 
 @keyframes voiceMicPulse {
-
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35);
@@ -1977,6 +1993,11 @@ body.playground-fullscreen .container {
   border-color: rgba(248, 113, 113, 0.22);
 }
 
+.toolStatusSkipped {
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+}
+
 .webSearchCount {
   font-size: 0.6875rem;
   font-weight: 500;
@@ -2005,19 +2026,18 @@ body.playground-fullscreen .container {
 .webSearchLoadingBar {
   height: 3px;
   border-radius: 2px;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      #3b82f6 50%,
-      transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, #3b82f6 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .mcpToolLoadingBar {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.95) 50%,
-      transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
+  );
 }
 
 @keyframes shimmer {
@@ -2330,11 +2350,11 @@ body.playground-fullscreen .container {
   overflow-wrap: anywhere;
 }
 
-.contentWithCitations>* {
+.contentWithCitations > * {
   margin-bottom: 0.25rem;
 }
 
-.contentWithCitations>*:last-child {
+.contentWithCitations > *:last-child {
   margin-bottom: 0;
 }
 

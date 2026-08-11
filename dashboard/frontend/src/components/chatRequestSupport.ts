@@ -159,6 +159,21 @@ export const buildChatRequestBody = (
   return requestBody
 }
 
+export const buildExactChatRequestBody = (
+  request: Record<string, unknown>,
+  fallbackModel: string,
+): Record<string, unknown> => {
+  const messages = Array.isArray(request.messages) ? request.messages : []
+  const requestModel = typeof request.model === 'string' ? request.model.trim() : ''
+
+  return {
+    ...request,
+    model: requestModel || fallbackModel,
+    messages,
+    stream: true,
+  }
+}
+
 export const collectResponseHeaders = (response: Response): Record<string, string> => {
   const headers: Record<string, string> = {}
 

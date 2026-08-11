@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildChatMessages, collectResponseHeaders } from './chatRequestSupport'
+import {
+  buildChatMessages,
+  buildExactChatRequestBody,
+  collectResponseHeaders,
+} from './chatRequestSupport'
 
 function responseWithHeaders(headers: Record<string, string>): Response {
   return new Response(null, { headers })
@@ -113,5 +117,42 @@ describe('buildChatMessages', () => {
       { role: 'assistant', content: 'I will search now.' },
       { role: 'user', content: 'continue' },
     ])
+  })
+})
+
+describe('buildExactChatRequestBody', () => {
+  it('preserves probe request fields while selecting the fallback model and streaming', () => {
+    const messages = [{ role: 'user', content: 'route this request' }]
+    const tools = [{ type: 'function', function: { name: 'lookup', parameters: {} } }]
+
+    expect(
+      buildExactChatRequestBody(
+        {
+          messages,
+          tools,
+          temperature: 0,
+          stream: false,
+        },
+        'vllm-sr/mom-balanced-v1',
+      ),
+    ).toEqual({
+      messages,
+      tools,
+      temperature: 0,
+      model: 'vllm-sr/mom-balanced-v1',
+      stream: true,
+    })
+  })
+
+  it('keeps the model selected by the materialized probe request', () => {
+    expect(
+      buildExactChatRequestBody(
+        {
+          model: 'vllm-sr/mom-private-v1',
+          messages: [{ role: 'user', content: 'private request' }],
+        },
+        'vllm-sr/auto',
+      ).model,
+    ).toBe('vllm-sr/mom-private-v1')
   })
 })

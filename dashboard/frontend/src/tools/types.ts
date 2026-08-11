@@ -46,7 +46,7 @@ export interface ToolCall {
     name: string
     arguments: string
   }
-  status: 'pending' | 'running' | 'completed' | 'failed'
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped'
 }
 
 /**

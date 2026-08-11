@@ -6,6 +6,7 @@ import ClawRoomChat from './ClawRoomChat'
 import ChatComposerAddMenu from './ChatComposerAddMenu'
 import ChatConversationSidebar from './ChatConversationSidebar'
 import ChatComponentConversationViewport from './ChatComponentConversationViewport'
+import ChatComponentErrors from './ChatComponentErrors'
 import ChatComponentInputBar from './ChatComponentInputBar'
 import ChatComponentSidebarShell from './ChatComponentSidebarShell'
 import ChatTaskQueue from './ChatTaskQueue'
@@ -15,7 +16,6 @@ import {
   type ConversationPreview,
   generateConversationId,
   generateMessageId,
-  generatePlaygroundTaskId,
   type PlaygroundTask,
   type Message,
 } from './ChatComponentTypes'
@@ -28,22 +28,33 @@ import { usePlaygroundAttachments } from './usePlaygroundAttachments'
 import { useChatConversationState } from './useChatConversationState'
 import { usePlaygroundConversationMessages } from './usePlaygroundConversationMessages'
 import { usePlaygroundRoutingModel } from './usePlaygroundRoutingModel'
+import {
+  usePlaygroundInvocation,
+  type ActivePlaygroundInvocationDraft,
+} from './usePlaygroundInvocation'
+import { usePlaygroundTaskSubmission } from './usePlaygroundTaskSubmission'
+import type { PlaygroundInvocation } from '../types/playgroundInvocation'
 
 interface ChatComponentProps {
   endpoint?: string
+  invocation?: PlaygroundInvocation | null
   isFullscreenMode?: boolean
+  onInvocationConsumed?: () => void
 }
 
 type ClawPlaygroundView = 'control' | 'room'
 
 const ChatComponent = ({
   endpoint = '/api/router/v1/chat/completions',
+  invocation = null,
   isFullscreenMode = false,
+  onInvocationConsumed,
 }: ChatComponentProps) => {
   const [conversationMessages, setConversationMessages] = useState<Record<string, Message[]>>({})
   const [conversationId, setConversationId] = useState<string>(() => generateConversationId())
   const [inputValue, setInputValue] = useState('')
   const [activeTasks, setActiveTasks] = useState<Record<string, PlaygroundTask>>({})
+  const [probeDraft, setProbeDraft] = useState<ActivePlaygroundInvocationDraft | null>(null)
   const {
     model,
     models: routingModels,
@@ -350,6 +361,7 @@ const ChatComponent = ({
 
       setConversationId(target.id)
       setInputValue('')
+      setProbeDraft(null)
       setExpandedToolCards(new Set())
     },
     [conversations],
@@ -377,6 +389,7 @@ const ChatComponent = ({
       if (id === conversationId) {
         setExpandedToolCards(new Set())
         setInputValue('')
+        setProbeDraft(null)
 
         const next = remaining[0]
         if (next) {
@@ -450,50 +463,67 @@ const ChatComponent = ({
     [executeTask, isRoutingModelReady, setActiveTaskForConversation],
   )
 
-  const handleSend = useCallback(() => {
-    if (!isRoutingModelReady) return
-    const trimmedInput = inputValue.trim()
-    if (!trimmedInput && pendingAttachments.length === 0) return
-
-    const attachmentsForTask = copyPendingAttachmentsForTask()
-    const nextTask: PlaygroundTask = {
-      id: generatePlaygroundTaskId(),
-      conversationId,
-      prompt: trimmedInput,
-      attachments: attachmentsForTask.length > 0 ? attachmentsForTask : undefined,
-      createdAt: Date.now(),
-      requestOptions: buildTaskRequestOptions(),
-    }
-
-    if (!conversations.some((conv) => conv.id === conversationId)) {
+  const activateProbeConversation = useCallback(
+    (targetConversationId: string, initialMessages: Message[]) => {
       hasHydratedConversation.current = true
-      saveConversation(conversationId, getConversationMessagesSnapshot(conversationId))
-    }
+      conversationIdRef.current = targetConversationId
+      clearPendingAttachments()
+      setEnableClawMode(false)
+      setEnableWebSearch(false)
+      setExpandedToolCards(new Set())
+      setConversationMessages((current) => ({
+        ...current,
+        [targetConversationId]: initialMessages,
+      }))
+      setConversationId(targetConversationId)
+    },
+    [clearPendingAttachments],
+  )
 
-    setConversationError(conversationId, null)
-    setInputValue('')
-    clearPendingAttachments()
+  const focusComposer = useCallback(() => {
+    if (typeof window === 'undefined') return
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus()
+      const promptLength = inputRef.current?.value.length ?? 0
+      inputRef.current?.setSelectionRange(promptLength, promptLength)
+    })
+  }, [])
 
-    if (!activeTasksRef.current[conversationId]) {
-      startTask(nextTask)
-      return
-    }
-    enqueueTask(nextTask)
-  }, [
+  usePlaygroundInvocation({
+    invocation,
+    isRoutingModelReady,
+    onInvocationConsumed,
+    routingModels,
+    activateConversation: activateProbeConversation,
+    focusComposer,
+    setConversationError,
+    setDraft: setProbeDraft,
+    setInputValue,
+    setModel,
+    startTask,
+  })
+
+  const handleSend = usePlaygroundTaskSubmission({
+    activeTasksRef,
     buildTaskRequestOptions,
+    clearPendingAttachments,
     conversationId,
     conversations,
+    copyPendingAttachmentsForTask,
     enqueueTask,
     getConversationMessagesSnapshot,
+    hasHydratedConversation,
     inputValue,
     isRoutingModelReady,
+    model,
     pendingAttachments,
-    clearPendingAttachments,
-    copyPendingAttachmentsForTask,
+    probeDraft,
     saveConversation,
     setConversationError,
+    setInputValue,
+    setProbeDraft,
     startTask,
-  ])
+  })
 
   useEffect(() => {
     if (!isRoutingModelReady) {
@@ -578,6 +608,7 @@ const ChatComponent = ({
 
   const handleNewConversation = useCallback(() => {
     setInputValue('')
+    setProbeDraft(null)
     clearPendingAttachments()
     setExpandedToolCards(new Set())
     setConversationId(generateConversationId())
@@ -596,7 +627,9 @@ const ChatComponent = ({
 
   const isTeamRoomView = enableClawMode && clawView === 'room',
     roomCreateDisabled = isTeamRoomView && clawManagementDisabled
-  const modeToggleDisabled = hasRunningTasks || isTogglingClawMode || readonlyLoading
+  const hasActiveProbeDraft = probeDraft?.conversationId === conversationId
+  const modeToggleDisabled =
+    hasRunningTasks || isTogglingClawMode || readonlyLoading || hasActiveProbeDraft
 
   const handleToggleTeamView = useCallback(() => {
     if (!enableClawMode || modeToggleDisabled) return
@@ -696,33 +729,12 @@ const ChatComponent = ({
               />
             ) : (
               <>
-                {routingModelStatus === 'error' && !visibleError ? (
-                  <div className={styles.error} role="alert">
-                    <span className={styles.errorIcon}>⚠️</span>
-                    <span>The automatic routing model is unavailable.</span>
-                    <button
-                      type="button"
-                      className={styles.errorAction}
-                      onClick={retryRoutingModelDiscovery}
-                    >
-                      Retry discovery
-                    </button>
-                  </div>
-                ) : null}
-                {visibleError && (
-                  <div className={styles.error}>
-                    <span className={styles.errorIcon}>⚠️</span>
-                    <span>{visibleError}</span>
-                    <button
-                      className={styles.errorDismiss}
-                      onClick={() => {
-                        setConversationError(conversationId, null)
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
+                <ChatComponentErrors
+                  onDismissError={() => setConversationError(conversationId, null)}
+                  onRetryRoutingModelDiscovery={retryRoutingModelDiscovery}
+                  routingModelStatus={routingModelStatus}
+                  visibleError={visibleError}
+                />
                 <ChatComponentConversationViewport
                   conversationId={conversationId}
                   expandedToolCards={expandedToolCards}
@@ -737,7 +749,7 @@ const ChatComponent = ({
                 />
                 <ChatComponentInputBar
                   attachments={pendingAttachments}
-                  attachFilesDisabled={readonlyLoading || isReadonly}
+                  attachFilesDisabled={readonlyLoading || isReadonly || hasActiveProbeDraft}
                   enableClawMode={enableClawMode}
                   enableWebSearch={enableWebSearch}
                   inputRef={inputRef}
@@ -749,6 +761,7 @@ const ChatComponent = ({
                   modelSelectDisabled={!isRoutingModelReady || isCurrentConversationRunning}
                   selectedModel={model}
                   voiceInputDisabled={isCurrentConversationRunning || readonlyLoading || isReadonly}
+                  webSearchDisabled={hasActiveProbeDraft}
                   onAttachFiles={handleAttachFiles}
                   onChangeInput={setInputValue}
                   onKeyDown={handleKeyDown}

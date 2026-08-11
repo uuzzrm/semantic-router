@@ -29,6 +29,7 @@ interface ChatComponentInputBarProps {
   modelSelectDisabled: boolean
   selectedModel: string
   voiceInputDisabled: boolean
+  webSearchDisabled?: boolean
   onAttachFiles: (files: FileList | File[]) => void
   onChangeInput: (value: string) => void
   onKeyDown: KeyboardEventHandler<HTMLTextAreaElement>
@@ -58,6 +59,7 @@ export default function ChatComponentInputBar({
   modelSelectDisabled,
   selectedModel,
   voiceInputDisabled,
+  webSearchDisabled = false,
   onAttachFiles,
   onChangeInput,
   onKeyDown,
@@ -198,7 +200,7 @@ export default function ChatComponentInputBar({
               onAttachFiles={handleAttachClick}
               onToggleClawMode={onToggleClawMode}
               onToggleWebSearch={onToggleWebSearch}
-              webSearchDisabled={isLoading || isTogglingClawMode}
+              webSearchDisabled={webSearchDisabled || isLoading || isTogglingClawMode}
               webSearchEnabled={enableWebSearch}
             />
             <ChatComposerModelSelect
