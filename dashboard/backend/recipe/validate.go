@@ -42,14 +42,11 @@ func compareEvalResponse(raw json.RawMessage, probe ProbeDetail, allProbes []Pro
 	if actualDecision == "" {
 		actualDecision = strings.TrimSpace(response.DecisionResult.DecisionName)
 	}
-	expectedRecipe := probe.Expected.Recipe
-	if expectedRecipe == "" {
-		expectedRecipe = "default"
-	}
+	expectedRecipe := normalizeExpectedRecipe(probe.Expected.Recipe)
 	actualPlugins := cleanStrings(response.DecisionResult.Plugins)
 	actualModels := cleanStrings(response.RecommendedModels)
 	actualSignals := nonNilSignalMap(response.DecisionResult.MatchedSignals)
-	traceDecisions, tracePassed, traceFailures := compareTrace(response.EvalTrace, probe.Expected.Decision, allowedDecisions(allProbes, probe.Expected.Recipe))
+	traceDecisions, tracePassed, traceFailures := compareTrace(response.EvalTrace, probe.Expected.Decision, allowedDecisions(allProbes, expectedRecipe))
 
 	pluginsPassed, pluginFailures := compareStringAssertion(
 		"plugin",
@@ -180,12 +177,20 @@ func compareTrace(trace []evalTrace, expectedDecision string, allowed map[string
 
 func allowedDecisions(probes []ProbeDetail, expectedRecipe string) map[string]struct{} {
 	allowed := map[string]struct{}{}
+	expectedRecipe = normalizeExpectedRecipe(expectedRecipe)
 	for _, probe := range probes {
-		if probe.Expected.Recipe == expectedRecipe {
+		if normalizeExpectedRecipe(probe.Expected.Recipe) == expectedRecipe {
 			allowed[probe.Expected.Decision] = struct{}{}
 		}
 	}
 	return allowed
+}
+
+func normalizeExpectedRecipe(value string) string {
+	if value = strings.TrimSpace(value); value != "" {
+		return value
+	}
+	return "default"
 }
 
 func aliasMatches(expected string, actual []string) bool {

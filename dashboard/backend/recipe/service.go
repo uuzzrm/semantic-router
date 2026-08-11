@@ -327,8 +327,8 @@ func (s *Service) loadSnapshot() (*snapshot, Descriptor, error) {
 		if probe.Model == "" {
 			var model string
 			var resolveErr error
-			expectedRecipe := strings.TrimSpace(probe.Expected.Recipe)
-			if (expectedRecipe == "" || expectedRecipe == "default") && len(configProjection.autoModels) > 0 {
+			expectedRecipe := normalizeExpectedRecipe(probe.Expected.Recipe)
+			if expectedRecipe == "default" && len(configProjection.autoModels) > 0 {
 				// Match the offline harness: only model-less probes in the default
 				// recipe participate in auto-entrypoint round-robin assignment.
 				model = configProjection.autoModels[defaultProbeIndex%len(configProjection.autoModels)]
@@ -336,7 +336,7 @@ func (s *Service) loadSnapshot() (*snapshot, Descriptor, error) {
 			} else {
 				// Dashboard Run requires an executable model. For named recipes,
 				// preserve the existing policy of selecting their first entrypoint.
-				model, resolveErr = configProjection.requestModelFor(probe.Expected.Recipe)
+				model, resolveErr = configProjection.requestModelFor(expectedRecipe)
 			}
 			if resolveErr != nil {
 				descriptor.SourceHealth.Status = "invalid"
