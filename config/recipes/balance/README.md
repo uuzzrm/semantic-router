@@ -5,6 +5,7 @@ This recipe is the recommended default general-purpose routing profile. It trade
 The maintained delivery is self-contained in this directory:
 
 - `config.yaml`
+- `metadata.yaml`
 - `recipe.dsl`
 - `probes.yaml`
 - `README.md`

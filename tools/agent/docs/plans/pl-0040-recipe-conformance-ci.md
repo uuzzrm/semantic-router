@@ -10,7 +10,7 @@ dispatchers.
 ## Scope
 
 - Version and strictly validate maintained `probes.yaml` manifests.
-- Discover the four-file recipe catalog without a hardcoded recipe list.
+- Discover the five-file recipe catalog without a hardcoded recipe list.
 - Enforce decision, entrypoint, algorithm, plugin, signal, and alias references.
 - Add a compact, Go-native hermetic decision contract matrix.
 - Run every base probe against a live CPU router with exact EvalTrace enabled.

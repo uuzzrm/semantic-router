@@ -249,6 +249,7 @@ workflow_suite_rules:
     local_command: make recipe-conformance-live-cpu-all
     paths:
       - config/recipes/**
+      - config/schemas/recipe-metadata-v1.schema.json
       - src/semantic-router/pkg/config/**
       - src/semantic-router/pkg/classification/**
       - src/semantic-router/pkg/decision/**

@@ -225,6 +225,7 @@ domains:
       - src/semantic-router/pkg/apiserver/route_classify*
       - tools/agent/scripts/recipe_conformance*
       - tools/agent/scripts/router_calibration_*
+      - config/schemas/recipe-metadata-v1.schema.json
       - tools/agent/schemas/recipe-probes-v1.schema.json
       - tools/make/recipe-conformance.mk
       - e2e/testing/run_recipe_conformance.sh

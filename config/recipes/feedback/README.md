@@ -5,6 +5,7 @@ This recipe turns dissatisfaction recovery into a first-class routing policy. It
 The maintained assets live here:
 
 - `config.yaml`
+- `metadata.yaml`
 - `recipe.dsl`
 - `probes.yaml`
 - `README.md`

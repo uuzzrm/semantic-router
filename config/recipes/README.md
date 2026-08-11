@@ -7,8 +7,9 @@ catalog taxonomy.
 
 ## Delivery contract
 
-Every child directory has the same four files:
+Every child directory has the same five files:
 
+- `metadata.yaml` — versioned identity, authorship, license, tags, and links.
 - `config.yaml` — canonical v0.3 runtime configuration.
 - `recipe.dsl` — reviewable routing policy that compiles back into the same
   dynamic routing surface.
@@ -19,11 +20,13 @@ The repository contract tests reject incomplete directories, invalid YAML or
 DSL, YAML/DSL drift, missing decision reachability, stale aliases, and loss of
 YAML-only decision adaptation policy during DSL merge.
 
-Probe manifests use `schema_version: v1` and are validated against
-`tools/agent/schemas/recipe-probes-v1.schema.json`. The conformance inventory
-discovers every immediate child directory automatically. Adding a recipe
-therefore adds it to static and live CI without a workflow or Go allowlist
-change.
+Managed recipe metadata uses `schema_version: vllm-sr/recipe-metadata/v1` and
+is validated against `config/schemas/recipe-metadata-v1.schema.json`. Its `id`
+must match the recipe directory. Probe manifests use `schema_version: v1` and
+are validated against `tools/agent/schemas/recipe-probes-v1.schema.json`. The
+conformance inventory discovers every immediate child directory automatically
+and includes its metadata identity. Adding a recipe therefore adds it to static
+and live CI without a workflow or Go allowlist change.
 
 See [CONFORMANCE.md](CONFORMANCE.md) for the short contributor checklist,
 coverage tiers, tag conventions, and local commands.
@@ -33,6 +36,23 @@ Single-profile recipes expose their `routing` block through the default
 disable that default and expose named `entrypoints` instead. Conformance counts
 and exercises both forms, so a default auto alias is not reported as zero
 entrypoints.
+
+## Use a managed recipe in Dashboard
+
+Serve the recipe's canonical config through the existing local stack:
+
+```bash
+vllm-sr serve --config config/recipes/<use-case>/config.yaml
+```
+
+The Dashboard mounts only that directory's five fixed files and treats it as
+the single active Recipe; it does not scan sibling recipes or catalog paths. In
+the existing **Mixture-of-Models** page, **Overview** shows identity, source
+health, inventory, and README content, while **Probes** provides server-paged
+filtering and lazy detail. **Run** starts a clean Playground conversation,
+**Edit** prepares the terminal user turn without sending it, and **Validate**
+calls the live Router Eval API without generating an answer. A bare
+`config.yaml` remains supported and is reported as unmanaged.
 
 ## Catalog
 

@@ -41,6 +41,7 @@ var maintainedFullConfigAssets = []string{
 var maintainedRecipeFiles = []string{
 	"README.md",
 	"config.yaml",
+	"metadata.yaml",
 	"probes.yaml",
 	"recipe.dsl",
 }

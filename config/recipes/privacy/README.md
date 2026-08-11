@@ -5,6 +5,7 @@ This recipe keeps privacy-sensitive or suspicious requests on a local model, sen
 The maintained assets live here:
 
 - `config.yaml`
+- `metadata.yaml`
 - `recipe.dsl`
 - `probes.yaml`
 - `README.md`

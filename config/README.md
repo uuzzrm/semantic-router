@@ -7,8 +7,10 @@
 - `config/fragments/decision/`: reusable `routing.decisions` rule-shape fragments
 - `config/fragments/algorithm/`: reusable `decision.algorithm` snippets
 - `config/fragments/plugin/`: reusable route plugin snippets
-- `config/recipes/`: complete use-case deliveries with symmetric YAML, DSL,
-  Eval API probes, and documentation
+- `config/recipes/`: complete use-case deliveries with versioned identity,
+  symmetric YAML and DSL, Eval API probes, and documentation
+- `config/schemas/`: versioned schemas for managed config assets such as Recipe
+  metadata; these schemas do not add fields to the Router runtime config
 - `config/runtime/`: backend-specific runtime examples referenced by configs
   and tests; these are support assets rather than schema fragments
 

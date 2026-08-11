@@ -24,6 +24,7 @@ policy shape.
 
 ## Assets and validation
 
+- `metadata.yaml` declares the managed recipe identity and distribution data.
 - `config.yaml` is the runnable canonical configuration.
 - `recipe.dsl` is the equivalent routing authoring surface.
 - `probes.yaml` covers every escalation/local label family, including `other`,
