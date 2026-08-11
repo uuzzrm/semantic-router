@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/vllm-project/semantic-router/dashboard/backend/config"
 	"github.com/vllm-project/semantic-router/dashboard/backend/evaluation"
 	"github.com/vllm-project/semantic-router/dashboard/backend/handlers"
 	"github.com/vllm-project/semantic-router/dashboard/backend/middleware"
 	"github.com/vllm-project/semantic-router/dashboard/backend/mlpipeline"
+	"github.com/vllm-project/semantic-router/dashboard/backend/recipe"
 	"github.com/vllm-project/semantic-router/dashboard/backend/routercontract"
 	"github.com/vllm-project/semantic-router/dashboard/backend/workflowstore"
 )
@@ -21,7 +23,24 @@ func registerCoreRoutes(mux *http.ServeMux, cfg *config.Config) {
 	registerToolRoutes(mux, cfg)
 	registerStatusRoutes(mux, cfg)
 	registerTopologyRoutes(mux, cfg)
+	registerRecipeRoutes(mux, cfg)
 	registerSecurityPolicyRoutes(mux, cfg)
+}
+
+func registerRecipeRoutes(mux *http.ServeMux, cfg *config.Config) {
+	recipeDir := strings.TrimSpace(os.Getenv("VLLM_SR_ACTIVE_RECIPE_DIR"))
+	if recipeDir == "" {
+		recipeDir = cfg.ConfigDir
+	}
+	service := recipe.NewService(recipe.Options{
+		Directory:    recipeDir,
+		RouterAPIURL: cfg.RouterAPIURL,
+	})
+	handler := handlers.NewRecipeHandler(service)
+	mux.HandleFunc("/api/recipe", handler.Descriptor)
+	mux.HandleFunc("/api/recipe/probes", handler.Probes)
+	mux.HandleFunc("/api/recipe/probes/", handler.ProbeAction)
+	log.Printf("Active Recipe API endpoints registered: /api/recipe, /api/recipe/probes/*")
 }
 
 func registerSecurityPolicyRoutes(mux *http.ServeMux, cfg *config.Config) {

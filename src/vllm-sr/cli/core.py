@@ -17,6 +17,7 @@ from cli.container_cli import (
 )
 from cli.container_images import get_fleet_sim_container_image, get_runtime_images
 from cli.logo import print_vllm_logo
+from cli.recipe_directory import resolve_active_recipe_directory
 from cli.runtime_lifecycle import (
     connect_runtime_container,
     ensure_clean_runtime_container,
@@ -156,6 +157,9 @@ def start_vllm_sr(
     print_vllm_logo()
     source_config_file = source_config_file or config_file
     runtime_config_file = runtime_config_file or config_file
+    # Reject an incomplete managed Recipe before stopping an existing stack or
+    # provisioning any support services.
+    resolve_active_recipe_directory(source_config_file)
     user_config, listeners = _load_runtime_config(runtime_config_file)
 
     log_startup_banner(source_config_file, listeners, stack_layout)

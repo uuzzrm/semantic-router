@@ -1,12 +1,39 @@
 package router
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/vllm-project/semantic-router/dashboard/backend/config"
 )
+
+func TestRegisterRecipeRoutesExposesUnmanagedDescriptor(t *testing.T) {
+	t.Setenv("VLLM_SR_ACTIVE_RECIPE_DIR", "")
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "config.yaml"), []byte("version: v0.3\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile(config): %v", err)
+	}
+	mux := http.NewServeMux()
+	registerRecipeRoutes(mux, &config.Config{ConfigDir: dir, RouterAPIURL: "http://router.invalid"})
+	recorder := httptest.NewRecorder()
+	mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/api/recipe", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("GET /api/recipe status = %d, body=%s", recorder.Code, recorder.Body.String())
+	}
+	var body struct {
+		Managed bool `json:"managed"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.Managed {
+		t.Fatal("bare config reported as managed recipe")
+	}
+}
 
 func TestResolveEvaluationProjectRootFallsBackToWorkingDirectoryRepo(t *testing.T) {
 	repoRoot := t.TempDir()

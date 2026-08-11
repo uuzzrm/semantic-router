@@ -100,6 +100,7 @@ func RequiredPermission(method, path string) string {
 		knowledgePermission,
 		toolsPermission,
 		observabilityPermission,
+		recipePermission,
 		fleetSimPermission,
 		featurePermission,
 	} {
@@ -113,6 +114,17 @@ func RequiredPermission(method, path string) string {
 	}
 
 	return ""
+}
+
+func recipePermission(_ string, path string) (string, bool) {
+	path = strings.TrimRight(path, "/")
+	if path == "/api/recipe" || path == "/api/recipe/probes" || strings.HasPrefix(path, "/api/recipe/probes/") {
+		if strings.HasSuffix(path, "/validate") {
+			return PermTopologyRead, true
+		}
+		return PermConfigRead, true
+	}
+	return "", false
 }
 
 func adminPermission(method, path string) (string, bool) {

@@ -33,6 +33,7 @@ from cli.container_services import (
     container_stop_container,
 )
 from cli.parser import parse_user_config
+from cli.recipe_directory import resolve_active_recipe_directory
 from cli.runtime_stack import RuntimeStackLayout, resolve_runtime_stack
 from cli.runtime_topology import resolve_runtime_topology
 from cli.utils import get_logger
@@ -363,6 +364,11 @@ def _build_dashboard_runtime_command(
     dashboard_mount_specs = _runtime_mount_specs(
         runtime_paths, include_dashboard_data=True
     )
+    dashboard_mount_specs.extend(_active_recipe_mount_specs(runtime_paths))
+    if runtime_paths.get("active_recipe_root"):
+        dashboard_env["VLLM_SR_ACTIVE_RECIPE_DIR"] = "/app/recipe"
+    else:
+        dashboard_env.pop("VLLM_SR_ACTIVE_RECIPE_DIR", None)
     configure_openclaw_support(
         dashboard_mount_specs,
         dashboard_env,
@@ -479,7 +485,15 @@ def _prepare_runtime_paths(
     os.makedirs(vllm_sr_dir, exist_ok=True)
     log.info(f"Mounting .vllm-sr directory: {vllm_sr_dir}")
 
-    models_dir = os.path.join(config_dir, "models")
+    active_recipe = resolve_active_recipe_directory(source_config_path)
+    # A managed Recipe source is a distributable five-file directory. Keep
+    # mutable model/runtime state under its explicitly ignored .vllm-sr area
+    # so serving it never changes the package contract.
+    models_dir = (
+        os.path.join(vllm_sr_dir, "models")
+        if active_recipe
+        else os.path.join(config_dir, "models")
+    )
     os.makedirs(models_dir, exist_ok=True)
 
     dashboard_data_dir = os.path.join(config_dir, ".vllm-sr", "dashboard-data")
@@ -500,6 +514,11 @@ def _prepare_runtime_paths(
             runtime_container_config,
         )
 
+    active_recipe_paths = {
+        f"active_recipe_{name.replace('.', '_').replace('-', '_')}_path": str(path)
+        for name, path in (active_recipe.assets if active_recipe else ())
+    }
+
     return (
         config_dir,
         {
@@ -509,6 +528,8 @@ def _prepare_runtime_paths(
             "models_dir": models_dir,
             "dashboard_data_dir": dashboard_data_dir,
             "envoy_config_path": envoy_config_path,
+            "active_recipe_root": str(active_recipe.root) if active_recipe else "",
+            **active_recipe_paths,
         },
         runtime_container_config,
     )
@@ -528,6 +549,23 @@ def _runtime_mount_specs(
         mounts.append(f"{runtime_paths['models_dir']}:/app/models:z")
     if include_dashboard_data:
         mounts.append(f"{runtime_paths['dashboard_data_dir']}:/app/data:z")
+    return mounts
+
+
+def _active_recipe_mount_specs(runtime_paths: dict[str, str]) -> list[str]:
+    if not runtime_paths.get("active_recipe_root"):
+        return []
+
+    mounts = []
+    for filename in (
+        "config.yaml",
+        "metadata.yaml",
+        "probes.yaml",
+        "recipe.dsl",
+        "README.md",
+    ):
+        key = f"active_recipe_{filename.replace('.', '_').replace('-', '_')}_path"
+        mounts.append(f"{runtime_paths[key]}:/app/recipe/{filename}:ro,z")
     return mounts
 
 
